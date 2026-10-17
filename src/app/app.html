@@ -1,0 +1,1539 @@
+<div class="app-container" [class.student-portal-mode]="activePortal === 'student'">
+  <!-- Top Global Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-badge">
+        <svg class="school-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+          <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+        </svg>
+      </div>
+      <div class="brand-info">
+        <h1 class="brand-title">EduTrack <span class="badge-portal">{{ activePortal === 'teacher' ? 'Teacher Portal' : 'Student Portal' }}</span></h1>
+        <p class="brand-subtitle">Attendance & Leave Management • LKG to 12th & Faculty</p>
+      </div>
+    </div>
+
+    <!-- Portal Switcher & Quick Controls -->
+    <div class="header-right">
+      <div class="portal-toggle-pill" role="tablist">
+        <button 
+          type="button" 
+          class="portal-btn" 
+          [class.active]="activePortal === 'teacher'"
+          (click)="switchPortal('teacher')">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+            <circle cx="12" cy="7" r="4"/>
+          </svg>
+          <span>Teacher View</span>
+          <span class="bubble-count" *ngIf="pendingLeavesCount > 0">{{ pendingLeavesCount }}</span>
+        </button>
+        <button 
+          type="button" 
+          class="portal-btn" 
+          [class.active]="activePortal === 'student'"
+          (click)="switchPortal('student')">
+          <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/>
+            <path d="M6 6h10M6 10h10"/>
+          </svg>
+          <span>Student View</span>
+        </button>
+      </div>
+
+      <div class="header-actions">
+        <button 
+          *ngIf="classes.length === 0" 
+          type="button" 
+          class="btn-demo-seed" 
+          (click)="seedDemo()" 
+          title="Seed realistic LKG to 12th school classes and students">
+          ✨ Load Demo Data
+        </button>
+        <button 
+          *ngIf="classes.length > 0" 
+          type="button" 
+          class="btn-clear-data" 
+          (click)="clearAll()" 
+          title="Clear all local data and empty tiles">
+          🗑️ Reset All
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- TEACHER VIEW                               -->
+  <!-- ========================================== -->
+  <main class="portal-main" *ngIf="activePortal === 'teacher'">
+    <!-- Teacher Desktop Navigation Tabs -->
+    <nav class="teacher-nav-tabs">
+      <button 
+        type="button" 
+        class="nav-tab" 
+        [class.active]="teacherTab === 'dashboard'" 
+        (click)="setTeacherTab('dashboard')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <span>Overview & Tiles</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="nav-tab" 
+        [class.active]="teacherTab === 'record'" 
+        (click)="setTeacherTab('record')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        </svg>
+        <span>Daily Attendance</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="nav-tab" 
+        [class.active]="teacherTab === 'monthly'" 
+        (click)="setTeacherTab('monthly')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <span>Monthly Register</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="nav-tab" 
+        [class.active]="teacherTab === 'classes'" 
+        (click)="setTeacherTab('classes')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <span>Classes & Students</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="nav-tab" 
+        [class.active]="teacherTab === 'leaves'" 
+        (click)="setTeacherTab('leaves')">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        <span>Leave Requests</span>
+        <span class="tab-badge-counter" *ngIf="pendingLeavesCount > 0">{{ pendingLeavesCount }}</span>
+      </button>
+    </nav>
+
+    <!-- TAB 1: TEACHER DASHBOARD & ATTENDANCE TILES -->
+    <section class="tab-content" *ngIf="teacherTab === 'dashboard'">
+      <!-- Date Filter Bar -->
+      <div class="dashboard-controls-card">
+        <div class="date-selector-group">
+          <span class="control-label">Attendance Date:</span>
+          <div class="date-stepper">
+            <button type="button" class="btn-step" (click)="changeSelectedDate(-1)" title="Previous Day">‹</button>
+            <input type="date" class="input-date" [(ngModel)]="selectedDate" (change)="onRecordConfigChange()" />
+            <button type="button" class="btn-step" (click)="changeSelectedDate(1)" title="Next Day">›</button>
+          </div>
+        </div>
+        <div class="dashboard-quick-actions">
+          <button type="button" class="btn-primary-sm" (click)="openAddClassModal()">
+            + Add Class
+          </button>
+          <button type="button" class="btn-secondary-sm" (click)="openAddStudentModal()" *ngIf="classes.length > 0">
+            + Add Student
+          </button>
+        </div>
+      </div>
+
+      <!-- Attendance Record Tiles (initially empty if no records) -->
+      <div class="attendance-tiles-section">
+        <div class="section-header-row">
+          <div>
+            <h2 class="section-title">Daily Attendance Overview</h2>
+            <p class="section-desc">Real-time statistics for {{ selectedDate }}</p>
+          </div>
+          <span class="live-status-pill" [class.active-records]="todayAttendanceStats.hasRecords">
+            {{ todayAttendanceStats.hasRecords ? '● Records Recorded' : '○ No Attendance Recorded Yet' }}
+          </span>
+        </div>
+
+        <!-- Metric Stat Tiles -->
+        <div class="metrics-grid">
+          <!-- Tile 1: Present -->
+          <div class="stat-card" [class.empty-tile]="!todayAttendanceStats.hasRecords">
+            <div class="stat-icon-wrapper bg-green-subtle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-title">Present Today</span>
+              <div class="stat-number">
+                <span *ngIf="todayAttendanceStats.hasRecords">{{ todayAttendanceStats.presentStudents }}</span>
+                <span *ngIf="!todayAttendanceStats.hasRecords" class="empty-val">--</span>
+              </div>
+              <div class="stat-subtitle">
+                <span *ngIf="todayAttendanceStats.hasRecords">{{ todayAttendanceStats.studentPercentage }}% Attendance</span>
+                <span *ngIf="!todayAttendanceStats.hasRecords">No data recorded</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tile 2: Absent -->
+          <div class="stat-card" [class.empty-tile]="!todayAttendanceStats.hasRecords">
+            <div class="stat-icon-wrapper bg-red-subtle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-title">Absent Today</span>
+              <div class="stat-number">
+                <span *ngIf="todayAttendanceStats.hasRecords">{{ todayAttendanceStats.absentStudents }}</span>
+                <span *ngIf="!todayAttendanceStats.hasRecords" class="empty-val">--</span>
+              </div>
+              <div class="stat-subtitle">
+                <span *ngIf="todayAttendanceStats.hasRecords">Students absent</span>
+                <span *ngIf="!todayAttendanceStats.hasRecords">No data recorded</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tile 3: Late -->
+          <div class="stat-card" [class.empty-tile]="!todayAttendanceStats.hasRecords">
+            <div class="stat-icon-wrapper bg-amber-subtle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-title">Late Arrivals</span>
+              <div class="stat-number">
+                <span *ngIf="todayAttendanceStats.hasRecords">{{ todayAttendanceStats.lateStudents }}</span>
+                <span *ngIf="!todayAttendanceStats.hasRecords" class="empty-val">--</span>
+              </div>
+              <div class="stat-subtitle">
+                <span *ngIf="todayAttendanceStats.hasRecords">Students marked late</span>
+                <span *ngIf="!todayAttendanceStats.hasRecords">No data recorded</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tile 4: On Leave -->
+          <div class="stat-card" [class.empty-tile]="!todayAttendanceStats.hasRecords">
+            <div class="stat-icon-wrapper bg-purple-subtle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-title">Approved Leave</span>
+              <div class="stat-number">
+                <span *ngIf="todayAttendanceStats.hasRecords">{{ todayAttendanceStats.leaveStudents }}</span>
+                <span *ngIf="!todayAttendanceStats.hasRecords" class="empty-val">--</span>
+              </div>
+              <div class="stat-subtitle">
+                <span *ngIf="todayAttendanceStats.hasRecords">Official leaves</span>
+                <span *ngIf="!todayAttendanceStats.hasRecords">No data recorded</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tile 5: Teachers / Faculty Attendance -->
+          <div class="stat-card bg-faculty-tile">
+            <div class="stat-icon-wrapper bg-indigo-subtle">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div class="stat-content">
+              <span class="stat-title">Faculty / Teachers</span>
+              <div class="stat-number">
+                <span *ngIf="todayAttendanceStats.totalMarkedTeachers > 0">
+                  {{ todayAttendanceStats.presentTeachers }}/{{ todayAttendanceStats.totalTeachersCount }}
+                </span>
+                <span *ngIf="todayAttendanceStats.totalMarkedTeachers === 0" class="empty-val">
+                  {{ teachers.length }} Total
+                </span>
+              </div>
+              <div class="stat-subtitle">
+                <button type="button" class="btn-link-action" (click)="quickTakeTeacherAttendance()">
+                  {{ todayAttendanceStats.totalMarkedTeachers > 0 ? 'Edit Faculty Attendance →' : 'Record Faculty →' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State Prompt if no classes exist yet -->
+        <div class="empty-dashboard-banner" *ngIf="classes.length === 0">
+          <div class="empty-banner-icon">🏫</div>
+          <h3>Welcome to School Attendance Tracker</h3>
+          <p>Your attendance tiles are currently empty. To get started, add your first class (LKG to 12th) and students, or load realistic demo data with one click!</p>
+          <div class="banner-buttons">
+            <button type="button" class="btn-primary" (click)="openAddClassModal()">+ Add First Class</button>
+            <button type="button" class="btn-outline" (click)="seedDemo()">✨ Load Demo School Data</button>
+          </div>
+        </div>
+
+        <!-- Class Attendance Tiles -->
+        <div class="classes-tiles-container" *ngIf="classes.length > 0">
+          <div class="sub-heading-row">
+            <h3 class="sub-heading">Class Attendance Tiles (LKG to 12th)</h3>
+            <span class="count-pill">{{ classes.length }} Classes</span>
+          </div>
+
+          <div class="classes-grid">
+            <div 
+              class="class-attendance-tile" 
+              *ngFor="let cls of classes"
+              [class.tile-unmarked]="!getClassAttendanceCardStats(cls).isMarked">
+              
+              <div class="class-tile-header">
+                <div>
+                  <span class="grade-pill">{{ cls.grade }}</span>
+                  <h4 class="class-title">{{ cls.name }}</h4>
+                </div>
+                <span class="status-indicator-badge" [class.status-done]="getClassAttendanceCardStats(cls).isMarked">
+                  {{ getClassAttendanceCardStats(cls).isMarked ? '✓ Marked' : 'Pending' }}
+                </span>
+              </div>
+
+              <div class="class-tile-meta">
+                <span>Room: {{ cls.room || 'N/A' }}</span>
+                <span>Teacher: {{ cls.teacherName || 'Not Assigned' }}</span>
+              </div>
+
+              <!-- Mini Progress / Stats -->
+              <div class="class-tile-stats">
+                <div class="progress-bar-bg" *ngIf="getClassAttendanceCardStats(cls).isMarked">
+                  <div class="progress-bar-fill" [style.width.%]="getClassAttendanceCardStats(cls).percentage"></div>
+                </div>
+                <div class="stat-breakdown-row">
+                  <span><strong>{{ getClassAttendanceCardStats(cls).total }}</strong> Enrolled</span>
+                  <span *ngIf="getClassAttendanceCardStats(cls).isMarked">
+                    <strong>{{ getClassAttendanceCardStats(cls).presentCount }}</strong> Present • 
+                    <strong>{{ getClassAttendanceCardStats(cls).absentCount }}</strong> Absent
+                  </span>
+                  <span *ngIf="!getClassAttendanceCardStats(cls).isMarked" class="text-muted">
+                    Attendance not taken yet
+                  </span>
+                </div>
+              </div>
+
+              <button type="button" class="btn-tile-action" (click)="quickTakeClassAttendance(cls)">
+                {{ getClassAttendanceCardStats(cls).isMarked ? 'Edit Attendance' : 'Mark Attendance' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending Leaves Notification Tile -->
+        <div class="pending-leaves-banner" *ngIf="pendingLeavesCount > 0">
+          <div class="banner-left">
+            <span class="pulse-indicator">🔔</span>
+            <div>
+              <strong>{{ pendingLeavesCount }} Student Leave Request{{ pendingLeavesCount > 1 ? 's' : '' }} Pending Review</strong>
+              <p>Students have applied for leave. Review and approve to automatically reflect in daily attendance.</p>
+            </div>
+          </div>
+          <button type="button" class="btn-white-accent" (click)="setTeacherTab('leaves')">
+            Review Leaves Desk →
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: DAILY ATTENDANCE RECORDING -->
+    <section class="tab-content" *ngIf="teacherTab === 'record'">
+      <div class="record-page-card">
+        <!-- Target & Class Selector Bar -->
+        <div class="record-toolbar">
+          <div class="toolbar-left">
+            <!-- Mode Toggle -->
+            <div class="type-segmented-control">
+              <button 
+                type="button" 
+                class="segment-btn" 
+                [class.active]="recordTargetType === 'student'"
+                (click)="recordTargetType = 'student'; onRecordConfigChange()">
+                👨‍🎓 Students Attendance
+              </button>
+              <button 
+                type="button" 
+                class="segment-btn" 
+                [class.active]="recordTargetType === 'teacher'"
+                (click)="recordTargetType = 'teacher'; onRecordConfigChange()">
+                👩‍🏫 Teachers / Staff
+              </button>
+            </div>
+
+            <!-- Class Dropdown (if student mode) -->
+            <div class="select-group" *ngIf="recordTargetType === 'student'">
+              <label>Select Class:</label>
+              <select class="custom-select" [(ngModel)]="selectedClassId" (change)="onRecordConfigChange()">
+                <option *ngFor="let c of classes" [value]="c.id">
+                  {{ c.name }} ({{ c.grade }})
+                </option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Date Selector -->
+          <div class="toolbar-right">
+            <div class="date-stepper">
+              <button type="button" class="btn-step" (click)="changeSelectedDate(-1)">‹</button>
+              <input type="date" class="input-date" [(ngModel)]="selectedDate" (change)="onRecordConfigChange()" />
+              <button type="button" class="btn-step" (click)="changeSelectedDate(1)">›</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Status Counter Strip -->
+        <div class="counter-strip">
+          <div class="strip-item">
+            <span class="strip-label">Total {{ recordTargetType === 'student' ? 'Students' : 'Teachers' }}</span>
+            <span class="strip-value">{{ currentRecordingStats.total }}</span>
+          </div>
+          <div class="strip-item text-green">
+            <span class="strip-label">Present</span>
+            <span class="strip-value">{{ currentRecordingStats.p }}</span>
+          </div>
+          <div class="strip-item text-red">
+            <span class="strip-label">Absent</span>
+            <span class="strip-value">{{ currentRecordingStats.a }}</span>
+          </div>
+          <div class="strip-item text-amber">
+            <span class="strip-label">Late</span>
+            <span class="strip-value">{{ currentRecordingStats.l }}</span>
+          </div>
+          <div class="strip-item text-purple">
+            <span class="strip-label">On Leave</span>
+            <span class="strip-value">{{ currentRecordingStats.lv }}</span>
+          </div>
+
+          <!-- Bulk Quick Actions -->
+          <div class="strip-actions">
+            <button type="button" class="btn-batch-p" (click)="markAll('present')">
+              ✓ All Present
+            </button>
+            <button type="button" class="btn-batch-a" (click)="markAll('absent')">
+              ✕ All Absent
+            </button>
+          </div>
+        </div>
+
+        <!-- Empty Targets Prompt -->
+        <div class="empty-list-card" *ngIf="currentRecordingTargets.length === 0">
+          <p *ngIf="recordTargetType === 'student'">
+            No students found in this class. Click <button type="button" class="link-btn" (click)="openAddStudentModal(selectedClassId)">+ Add Student</button> or <button type="button" class="link-btn" (click)="openBulkStudentModal(selectedClassId)">Bulk Add Students</button>.
+          </p>
+          <p *ngIf="recordTargetType === 'teacher'">
+            No faculty members added yet. Click <button type="button" class="link-btn" (click)="openAddTeacherModal()">+ Add Faculty Member</button>.
+          </p>
+        </div>
+
+        <!-- Attendance Marking List -->
+        <div class="attendance-table-container" *ngIf="currentRecordingTargets.length > 0">
+          <div class="students-attendance-list">
+            <div 
+              class="attendance-row-card" 
+              *ngFor="let item of currentRecordingTargets"
+              [class.status-p-active]="currentAttendanceMap[item.id] === 'present'"
+              [class.status-a-active]="currentAttendanceMap[item.id] === 'absent'"
+              [class.status-l-active]="currentAttendanceMap[item.id] === 'late'"
+              [class.status-o-active]="currentAttendanceMap[item.id] === 'leave'">
+
+              <!-- Student / Teacher Info -->
+              <div class="row-info-col">
+                <div class="avatar-circle">
+                  {{ item.name.charAt(0) }}
+                </div>
+                <div class="name-meta">
+                  <div class="name-line">
+                    <span class="roll-badge" *ngIf="isStudent(item)">#{{ getTargetRollOrEmpId(item) }}</span>
+                    <span class="emp-badge" *ngIf="!isStudent(item)">{{ getTargetRollOrEmpId(item) }}</span>
+                    <strong class="item-name">{{ item.name }}</strong>
+                  </div>
+                  <div class="extra-meta">
+                    <span>{{ getTargetSubtitle(item) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Approved Leave Pill Notice -->
+              <div class="leave-notice-col" *ngIf="getApprovedLeaveNotice(item.id)">
+                <span class="leave-pill-tag">
+                  🏖️ {{ getApprovedLeaveNotice(item.id) }}
+                </span>
+              </div>
+
+              <!-- 4-Way Status Toggle Buttons -->
+              <div class="status-buttons-col">
+                <button 
+                  type="button" 
+                  class="btn-status btn-p" 
+                  [class.selected]="currentAttendanceMap[item.id] === 'present'"
+                  (click)="setAttendanceStatus(item.id, 'present')">
+                  P
+                  <span class="btn-text">Present</span>
+                </button>
+                <button 
+                  type="button" 
+                  class="btn-status btn-a" 
+                  [class.selected]="currentAttendanceMap[item.id] === 'absent'"
+                  (click)="setAttendanceStatus(item.id, 'absent')">
+                  A
+                  <span class="btn-text">Absent</span>
+                </button>
+                <button 
+                  type="button" 
+                  class="btn-status btn-l" 
+                  [class.selected]="currentAttendanceMap[item.id] === 'late'"
+                  (click)="setAttendanceStatus(item.id, 'late')">
+                  L
+                  <span class="btn-text">Late</span>
+                </button>
+                <button 
+                  type="button" 
+                  class="btn-status btn-o" 
+                  [class.selected]="currentAttendanceMap[item.id] === 'leave'"
+                  (click)="setAttendanceStatus(item.id, 'leave')">
+                  O
+                  <span class="btn-text">Leave</span>
+                </button>
+              </div>
+
+              <!-- Remarks Input Field -->
+              <div class="remarks-col">
+                <input 
+                  type="text" 
+                  class="input-remarks" 
+                  placeholder="Optional remarks..." 
+                  [(ngModel)]="currentRemarksMap[item.id]" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Sticky Save Bar -->
+          <div class="save-bar-card">
+            <div class="save-bar-info">
+              <span>Ready to record attendance for <strong>{{ currentRecordingTargets.length }}</strong> individuals</span>
+            </div>
+            <button type="button" class="btn-save-attendance" (click)="saveAttendance()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              <span>Save & Record Attendance</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: MONTHLY ATTENDANCE REGISTER (ACTUAL REGISTER VIEW) -->
+    <section class="tab-content" *ngIf="teacherTab === 'monthly'">
+      <div class="register-card">
+        <!-- Monthly Filters Bar -->
+        <div class="register-header-controls">
+          <div class="controls-row-top">
+            <div class="filter-item">
+              <label>Register For:</label>
+              <select class="custom-select" [(ngModel)]="monthlyTargetType" (change)="calculateMonthlyMatrix()">
+                <option value="student">Students Class Register</option>
+                <option value="teacher">Faculty / Staff Register</option>
+              </select>
+            </div>
+
+            <div class="filter-item" *ngIf="monthlyTargetType === 'student'">
+              <label>Select Class:</label>
+              <select class="custom-select" [(ngModel)]="monthlyClassId" (change)="calculateMonthlyMatrix()">
+                <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label>Month:</label>
+              <select class="custom-select" [(ngModel)]="monthlyMonth" (change)="calculateMonthlyMatrix()">
+                <option [value]="1">January</option>
+                <option [value]="2">February</option>
+                <option [value]="3">March</option>
+                <option [value]="4">April</option>
+                <option [value]="5">May</option>
+                <option [value]="6">June</option>
+                <option [value]="7">July</option>
+                <option [value]="8">August</option>
+                <option [value]="9">September</option>
+                <option [value]="10">October</option>
+                <option [value]="11">November</option>
+                <option [value]="12">December</option>
+              </select>
+            </div>
+
+            <div class="filter-item">
+              <label>Year:</label>
+              <input type="number" class="custom-input year-input" [(ngModel)]="monthlyYear" (change)="calculateMonthlyMatrix()" />
+            </div>
+          </div>
+
+          <!-- Actions & Search Row -->
+          <div class="controls-row-bottom">
+            <div class="search-box">
+              <input 
+                type="text" 
+                class="search-input" 
+                placeholder="Search by student name or roll..." 
+                [(ngModel)]="monthlySearchTerm" />
+            </div>
+
+            <label class="checkbox-label">
+              <input type="checkbox" [(ngModel)]="monthlyOnlyLowAttendance" />
+              <span>Show Low Attendance (&lt; 75%) Only</span>
+            </label>
+
+            <div class="export-actions">
+              <button type="button" class="btn-print" (click)="printRegister()">
+                🖨️ Print Sheet
+              </button>
+              <button type="button" class="btn-export-csv" (click)="exportRegisterCSV()">
+                📥 Export CSV
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Summary Strip -->
+        <div class="register-summary-strip" *ngIf="monthlyMatrixData">
+          <div class="summary-stat">
+            <span class="lbl">Enrolled:</span>
+            <strong>{{ monthlyMatrixData.summary.totalEnrolled }}</strong>
+          </div>
+          <div class="summary-stat text-green">
+            <span class="lbl">Total Present (P):</span>
+            <strong>{{ monthlyMatrixData.summary.overallPresent }}</strong>
+          </div>
+          <div class="summary-stat text-red">
+            <span class="lbl">Total Absent (A):</span>
+            <strong>{{ monthlyMatrixData.summary.overallAbsent }}</strong>
+          </div>
+          <div class="summary-stat text-purple">
+            <span class="lbl">Total Leaves (O):</span>
+            <strong>{{ monthlyMatrixData.summary.overallLeave }}</strong>
+          </div>
+          <div class="summary-stat">
+            <span class="lbl">Class Avg %:</span>
+            <strong class="stat-highlight">{{ monthlyMatrixData.summary.avgPercentage }}%</strong>
+          </div>
+        </div>
+
+        <!-- The Matrix Sheet -->
+        <div class="matrix-table-wrapper" *ngIf="monthlyMatrixData && monthlyMatrixData.rows.length > 0">
+          <div class="table-scroll-container">
+            <table class="attendance-register-table">
+              <thead>
+                <tr>
+                  <th class="col-sticky col-roll">Roll/ID</th>
+                  <th class="col-sticky col-name">Name</th>
+                  <th 
+                    *ngFor="let d of monthlyMatrixData.days" 
+                    class="col-day" 
+                    [class.col-sunday]="d.isSunday"
+                    [class.col-today]="d.isToday">
+                    <span class="day-num">{{ d.day }}</span>
+                    <span class="day-name">{{ d.dayName }}</span>
+                  </th>
+                  <th class="col-summary">P</th>
+                  <th class="col-summary">A</th>
+                  <th class="col-summary">L</th>
+                  <th class="col-summary">O</th>
+                  <th class="col-pct">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of filteredMonthlyRows">
+                  <td class="col-sticky col-roll">
+                    {{ getTargetRollOrEmpId(row.target) }}
+                  </td>
+                  <td class="col-sticky col-name">
+                    <div class="name-cell-wrap">
+                      <span class="table-avatar">{{ row.target.name.charAt(0) }}</span>
+                      <span class="student-table-name">{{ row.target.name }}</span>
+                    </div>
+                  </td>
+                  <td 
+                    *ngFor="let d of monthlyMatrixData.days" 
+                    class="col-day-cell"
+                    [class.cell-sunday]="d.isSunday"
+                    [class.cell-today]="d.isToday">
+                    
+                    <span 
+                      class="cell-badge"
+                      *ngIf="row.statuses[d.day]"
+                      [class.badge-p]="row.statuses[d.day] === 'present'"
+                      [class.badge-a]="row.statuses[d.day] === 'absent'"
+                      [class.badge-l]="row.statuses[d.day] === 'late'"
+                      [class.badge-o]="row.statuses[d.day] === 'leave'">
+                      {{ row.statuses[d.day] === 'present' ? 'P' : row.statuses[d.day] === 'absent' ? 'A' : row.statuses[d.day] === 'late' ? 'L' : 'O' }}
+                    </span>
+                    <span class="cell-empty" *ngIf="!row.statuses[d.day]">-</span>
+                  </td>
+                  <td class="col-summary text-green font-bold">{{ row.pCount }}</td>
+                  <td class="col-summary text-red font-bold">{{ row.aCount }}</td>
+                  <td class="col-summary text-amber font-bold">{{ row.lCount }}</td>
+                  <td class="col-summary text-purple font-bold">{{ row.leaveCount }}</td>
+                  <td class="col-pct">
+                    <span 
+                      class="pct-badge"
+                      [class.pct-high]="row.percentage >= 85"
+                      [class.pct-mid]="row.percentage >= 75 && row.percentage < 85"
+                      [class.pct-low]="row.percentage < 75">
+                      {{ row.percentage }}%
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Empty State for Monthly Matrix -->
+        <div class="empty-list-card" *ngIf="!monthlyMatrixData || filteredMonthlyRows.length === 0">
+          <p>No attendance register entries found for this class and month. Select a different class or record attendance.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: CLASSES & STUDENTS MANAGEMENT -->
+    <section class="tab-content" *ngIf="teacherTab === 'classes'">
+      <div class="management-page-card">
+        <!-- Action Header -->
+        <div class="mgmt-header-row">
+          <div>
+            <h2 class="section-title">School Roster & Classes</h2>
+            <p class="section-desc">Manage grades from LKG to 12th, enrolled students, and faculty members.</p>
+          </div>
+          <div class="mgmt-action-buttons">
+            <button type="button" class="btn-primary" (click)="openAddClassModal()">+ Add New Class</button>
+            <button type="button" class="btn-secondary" (click)="openAddStudentModal()" *ngIf="classes.length > 0">+ Add Student</button>
+            <button type="button" class="btn-outline" (click)="openBulkStudentModal()" *ngIf="classes.length > 0">⚡ Bulk Add Students</button>
+            <button type="button" class="btn-outline" (click)="openAddTeacherModal()">+ Add Faculty</button>
+          </div>
+        </div>
+
+        <!-- Class Cards Accordions / List -->
+        <div class="classes-management-list">
+          <div class="class-mgmt-card" *ngFor="let cls of classes">
+            <div class="mgmt-card-top">
+              <div class="class-info-block">
+                <span class="grade-pill-large">{{ cls.grade }}</span>
+                <div>
+                  <h3 class="mgmt-class-name">{{ cls.name }}</h3>
+                  <div class="mgmt-class-meta">
+                    <span>Room: {{ cls.room || 'Unassigned' }}</span>
+                    <span>Teacher: {{ cls.teacherName || 'Not Assigned' }}</span>
+                    <span>Students: {{ (students | json).length ? (cls.id | json) : '' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="class-card-actions">
+                <button type="button" class="btn-action-sm" (click)="openAddStudentModal(cls.id)">+ Add Student</button>
+                <button type="button" class="btn-action-sm" (click)="openBulkStudentModal(cls.id)">Bulk Add</button>
+                <button type="button" class="btn-delete-sm" (click)="deleteClass(cls)">Delete Class</button>
+              </div>
+            </div>
+
+            <!-- Students in this class -->
+            <div class="students-roster-section">
+              <h4 class="roster-heading">Enrolled Students</h4>
+              <div class="roster-grid">
+                <div class="student-chip" *ngFor="let st of students" [hidden]="st.classId !== cls.id">
+                  <span class="chip-roll">#{{ st.rollNo }}</span>
+                  <span class="chip-name">{{ st.name }}</span>
+                  <button type="button" class="chip-del" (click)="deleteStudent(st)" title="Delete student">✕</button>
+                </div>
+              </div>
+              <p class="no-students-msg" *ngIf="(students.length === 0)">
+                No students enrolled in this class yet.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Faculty Members Section -->
+        <div class="faculty-section-card">
+          <div class="sub-heading-row">
+            <div>
+              <h3 class="sub-heading">Faculty & Teaching Staff</h3>
+              <p class="section-desc">Track and manage teacher attendance records</p>
+            </div>
+            <button type="button" class="btn-secondary-sm" (click)="openAddTeacherModal()">+ Add Faculty Member</button>
+          </div>
+
+          <div class="faculty-grid">
+            <div class="faculty-card" *ngFor="let t of teachers">
+              <div class="faculty-avatar">{{ t.name.charAt(0) }}</div>
+              <div class="faculty-info">
+                <strong>{{ t.name }}</strong>
+                <span class="emp-id-tag">{{ t.empId }}</span>
+                <span class="faculty-dept">{{ t.department }}</span>
+                <span class="faculty-phone" *ngIf="t.phone">{{ t.phone }}</span>
+              </div>
+              <button type="button" class="chip-del" (click)="deleteTeacher(t)" title="Delete teacher">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: LEAVE REQUESTS DESK (TEACHER VIEW) -->
+    <section class="tab-content" *ngIf="teacherTab === 'leaves'">
+      <div class="leaves-management-card">
+        <div class="leaves-header-row">
+          <div>
+            <h2 class="section-title">Student Leave Applications Desk</h2>
+            <p class="section-desc">Review student leave requests. Approving will automatically mark attendance as 'Leave'.</p>
+          </div>
+          
+          <!-- Filter Tabs -->
+          <div class="leave-filter-pills">
+            <button 
+              type="button" 
+              class="pill-btn" 
+              [class.active]="leaveFilterStatus === 'all'"
+              (click)="leaveFilterStatus = 'all'">
+              All ({{ leaves.length }})
+            </button>
+            <button 
+              type="button" 
+              class="pill-btn pill-pending" 
+              [class.active]="leaveFilterStatus === 'pending'"
+              (click)="leaveFilterStatus = 'pending'">
+              Pending ({{ pendingLeavesCount }})
+            </button>
+            <button 
+              type="button" 
+              class="pill-btn" 
+              [class.active]="leaveFilterStatus === 'approved'"
+              (click)="leaveFilterStatus = 'approved'">
+              Approved
+            </button>
+            <button 
+              type="button" 
+              class="pill-btn" 
+              [class.active]="leaveFilterStatus === 'rejected'"
+              (click)="leaveFilterStatus = 'rejected'">
+              Rejected
+            </button>
+          </div>
+        </div>
+
+        <!-- Leaves List -->
+        <div class="leaves-list-grid">
+          <div 
+            class="leave-app-card" 
+            *ngFor="let l of filteredLeaves"
+            [class.card-pending]="l.status === 'pending'"
+            [class.card-approved]="l.status === 'approved'"
+            [class.card-rejected]="l.status === 'rejected'">
+
+            <div class="leave-card-top">
+              <div>
+                <span class="leave-type-badge">{{ l.leaveType }}</span>
+                <h3 class="leave-student-name">{{ l.studentName }} <span class="roll-inline">#{{ l.rollNo }}</span></h3>
+                <span class="leave-class-tag">{{ l.className }}</span>
+              </div>
+              <span 
+                class="leave-status-pill"
+                [class.pill-pending]="l.status === 'pending'"
+                [class.pill-approved]="l.status === 'approved'"
+                [class.pill-rejected]="l.status === 'rejected'">
+                {{ l.status === 'pending' ? '🟡 Pending Review' : l.status === 'approved' ? '🟢 Approved' : '🔴 Rejected' }}
+              </span>
+            </div>
+
+            <div class="leave-duration-box">
+              <div class="duration-dates">
+                <span><strong>From:</strong> {{ l.fromDate }}</span>
+                <span><strong>To:</strong> {{ l.toDate }}</span>
+              </div>
+              <span class="applied-date-meta">Applied on {{ l.appliedDate | date:'mediumDate' }}</span>
+            </div>
+
+            <div class="leave-reason-box">
+              <strong class="reason-label">Reason:</strong>
+              <p class="reason-text">"{{ l.reason }}"</p>
+            </div>
+
+            <div class="leave-contact-info" *ngIf="l.parentContact">
+              <span>Parent Contact: <strong>{{ l.parentContact }}</strong></span>
+            </div>
+
+            <!-- Teacher Remarks if already reviewed -->
+            <div class="teacher-remarks-box" *ngIf="l.teacherRemarks">
+              <strong>Teacher Note:</strong> {{ l.teacherRemarks }}
+            </div>
+
+            <!-- Actions if Pending -->
+            <div class="leave-action-buttons" *ngIf="l.status === 'pending'">
+              <button type="button" class="btn-approve" (click)="openReviewLeaveModal(l)">
+                ✓ Review & Decide
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-list-card" *ngIf="filteredLeaves.length === 0">
+          <p>No leave applications found matching your filter.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- STUDENT VIEW                               -->
+  <!-- ========================================== -->
+  <main class="portal-main" *ngIf="activePortal === 'student'">
+    <!-- Student Navigation Tabs -->
+    <nav class="student-nav-tabs">
+      <button 
+        type="button" 
+        class="nav-tab" 
+        [class.active]="studentTab === 'apply-leave'" 
+        (click)="studentTab = 'apply-leave'">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        <span>Apply for Leave</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="nav-tab" 
+        [class.active]="studentTab === 'my-leaves'" 
+        (click)="studentTab = 'my-leaves'">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        <span>My Leave Status</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="nav-tab" 
+        [class.active]="studentTab === 'my-attendance'" 
+        (click)="studentTab = 'my-attendance'">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <span>Check My Attendance</span>
+      </button>
+    </nav>
+
+    <!-- STUDENT TAB 1: APPLY FOR LEAVE -->
+    <section class="tab-content" *ngIf="studentTab === 'apply-leave'">
+      <div class="student-form-card">
+        <div class="form-intro-banner">
+          <div class="banner-icon">📝</div>
+          <div>
+            <h2 class="form-title">Student Leave Application</h2>
+            <p class="form-subtitle">Fill in the details below to submit your leave request to your class teacher.</p>
+          </div>
+        </div>
+
+        <form (ngSubmit)="submitStudentLeave()" class="leave-form-body">
+          <div class="form-grid-2">
+            <!-- Class Selection -->
+            <div class="form-group">
+              <label class="input-label">Select Your Class: <span class="required">*</span></label>
+              <select 
+                class="custom-select" 
+                [(ngModel)]="studentApplyForm.classId" 
+                name="classId" 
+                (change)="onStudentFormClassChange()" 
+                required>
+                <option value="" disabled>-- Select Class (LKG to 12th) --</option>
+                <option *ngFor="let c of classes" [value]="c.id">{{ c.name }} ({{ c.grade }})</option>
+              </select>
+            </div>
+
+            <!-- Student Selection / Entry -->
+            <div class="form-group">
+              <label class="input-label">Student Name: <span class="required">*</span></label>
+              <select 
+                class="custom-select" 
+                [(ngModel)]="studentApplyForm.studentId" 
+                name="studentId" 
+                (change)="onStudentSelectChange()" 
+                *ngIf="students.length > 0">
+                <option value="" disabled>-- Select your name --</option>
+                <option *ngFor="let s of students" [value]="s.id" [hidden]="s.classId !== studentApplyForm.classId">
+                  #{{ s.rollNo }} - {{ s.name }}
+                </option>
+              </select>
+              <input 
+                *ngIf="students.length === 0" 
+                type="text" 
+                class="custom-input" 
+                placeholder="Enter your full name" 
+                [(ngModel)]="studentApplyForm.studentName" 
+                name="studentName" 
+                required />
+            </div>
+
+            <!-- Roll Number -->
+            <div class="form-group">
+              <label class="input-label">Roll Number:</label>
+              <input 
+                type="text" 
+                class="custom-input" 
+                placeholder="e.g. 05" 
+                [(ngModel)]="studentApplyForm.rollNo" 
+                name="rollNo" />
+            </div>
+
+            <!-- Leave Type -->
+            <div class="form-group">
+              <label class="input-label">Type of Leave: <span class="required">*</span></label>
+              <select class="custom-select" [(ngModel)]="studentApplyForm.leaveType" name="leaveType" required>
+                <option *ngFor="let lt of leaveTypes" [value]="lt">{{ lt }}</option>
+              </select>
+            </div>
+
+            <!-- From Date -->
+            <div class="form-group">
+              <label class="input-label">From Date: <span class="required">*</span></label>
+              <input 
+                type="date" 
+                class="custom-input" 
+                [(ngModel)]="studentApplyForm.fromDate" 
+                name="fromDate" 
+                required />
+            </div>
+
+            <!-- To Date -->
+            <div class="form-group">
+              <label class="input-label">To Date: <span class="required">*</span></label>
+              <input 
+                type="date" 
+                class="custom-input" 
+                [(ngModel)]="studentApplyForm.toDate" 
+                name="toDate" 
+                required />
+            </div>
+          </div>
+
+          <!-- Live Duration Calculator -->
+          <div class="duration-pill" *ngIf="calculatedLeaveDuration > 0">
+            <span>📅 Total Leave Duration: <strong>{{ calculatedLeaveDuration }} Day{{ calculatedLeaveDuration > 1 ? 's' : '' }}</strong></span>
+          </div>
+
+          <!-- Reason -->
+          <div class="form-group full-width">
+            <label class="input-label">Reason for Leave: <span class="required">*</span></label>
+            <textarea 
+              class="custom-textarea" 
+              rows="4" 
+              placeholder="Please explain the reason for your absence (e.g. fever, family event, tournament)..." 
+              [(ngModel)]="studentApplyForm.reason" 
+              name="reason" 
+              required></textarea>
+          </div>
+
+          <!-- Parent Contact Number -->
+          <div class="form-group full-width">
+            <label class="input-label">Parent / Guardian Contact Number: <span class="required">*</span></label>
+            <input 
+              type="tel" 
+              class="custom-input" 
+              placeholder="e.g. +91 9876543210" 
+              [(ngModel)]="studentApplyForm.parentContact" 
+              name="parentContact" 
+              required />
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-submit-leave">
+              🚀 Submit Leave Request
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- STUDENT TAB 2: MY LEAVE APPLICATIONS STATUS -->
+    <section class="tab-content" *ngIf="studentTab === 'my-leaves'">
+      <div class="student-status-card">
+        <div class="section-header-row">
+          <div>
+            <h2 class="section-title">My Leave Applications</h2>
+            <p class="section-desc">Track the review status and feedback from your class teacher.</p>
+          </div>
+          <button type="button" class="btn-primary-sm" (click)="studentTab = 'apply-leave'">+ New Request</button>
+        </div>
+
+        <div class="status-cards-grid">
+          <div 
+            class="leave-app-card" 
+            *ngFor="let l of leaves"
+            [class.card-pending]="l.status === 'pending'"
+            [class.card-approved]="l.status === 'approved'"
+            [class.card-rejected]="l.status === 'rejected'">
+
+            <div class="leave-card-top">
+              <div>
+                <span class="leave-type-badge">{{ l.leaveType }}</span>
+                <h3 class="leave-student-name">{{ l.studentName }} (Roll #{{ l.rollNo }})</h3>
+                <span class="leave-class-tag">{{ l.className }}</span>
+              </div>
+              <span 
+                class="leave-status-pill"
+                [class.pill-pending]="l.status === 'pending'"
+                [class.pill-approved]="l.status === 'approved'"
+                [class.pill-rejected]="l.status === 'rejected'">
+                {{ l.status === 'pending' ? '🟡 Awaiting Review' : l.status === 'approved' ? '🟢 Approved' : '🔴 Not Approved' }}
+              </span>
+            </div>
+
+            <div class="leave-duration-box">
+              <div class="duration-dates">
+                <span><strong>From:</strong> {{ l.fromDate }}</span>
+                <span><strong>To:</strong> {{ l.toDate }}</span>
+              </div>
+              <span class="applied-date-meta">Applied on {{ l.appliedDate | date:'mediumDate' }}</span>
+            </div>
+
+            <div class="leave-reason-box">
+              <strong class="reason-label">Reason:</strong>
+              <p class="reason-text">"{{ l.reason }}"</p>
+            </div>
+
+            <div class="teacher-feedback-alert" *ngIf="l.teacherRemarks">
+              <strong>Teacher Remarks:</strong> {{ l.teacherRemarks }}
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-list-card" *ngIf="leaves.length === 0">
+          <p>No leave requests found. Click "Apply for Leave" to submit your first application.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- STUDENT TAB 3: CHECK MY ATTENDANCE -->
+    <section class="tab-content" *ngIf="studentTab === 'my-attendance'">
+      <div class="student-check-card">
+        <div class="check-header">
+          <h2 class="section-title">Personal Attendance Report</h2>
+          <p class="section-desc">Select your class and name to check your overall attendance and exam eligibility.</p>
+        </div>
+
+        <!-- Selection Controls -->
+        <div class="check-selectors">
+          <div class="form-group">
+            <label class="input-label">Select Class:</label>
+            <select class="custom-select" [(ngModel)]="studentAttendanceCheck.classId" (change)="onStudentCheckClassChange()">
+              <option value="" disabled>-- Select Class --</option>
+              <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+            </select>
+          </div>
+
+          <div class="form-group" *ngIf="studentAttendanceCheck.classId">
+            <label class="input-label">Select Student:</label>
+            <select class="custom-select" [(ngModel)]="studentAttendanceCheck.studentId" (change)="runStudentAttendanceCheck()">
+              <option value="" disabled>-- Select Your Name --</option>
+              <option *ngFor="let s of students" [value]="s.id" [hidden]="s.classId !== studentAttendanceCheck.classId">
+                #{{ s.rollNo }} - {{ s.name }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Result Box -->
+        <div class="attendance-report-result" *ngIf="studentAttendanceCheck.result">
+          <div class="score-card" [class.score-good]="studentAttendanceCheck.result.isGood" [class.score-bad]="!studentAttendanceCheck.result.isGood">
+            <div class="percentage-circle">
+              <span class="pct-val">{{ studentAttendanceCheck.result.percentage }}%</span>
+              <span class="pct-lbl">Attendance</span>
+            </div>
+            <div class="score-meta">
+              <h3>{{ studentAttendanceCheck.result.student?.name }}</h3>
+              <p>Roll No: #{{ studentAttendanceCheck.result.student?.rollNo }} • {{ getClassName(studentAttendanceCheck.classId) }}</p>
+              <span class="eligibility-tag" [class.tag-good]="studentAttendanceCheck.result.isGood" [class.tag-bad]="!studentAttendanceCheck.result.isGood">
+                {{ studentAttendanceCheck.result.isGood ? '✓ Eligible for Examinations (≥ 75%)' : '⚠ Low Attendance Warning (< 75%)' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Stats 4-column strip -->
+          <div class="metrics-grid">
+            <div class="stat-card">
+              <span class="stat-title">Total Marked Days</span>
+              <span class="stat-number">{{ studentAttendanceCheck.result.totalDays }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title text-green">Present Days</span>
+              <span class="stat-number text-green">{{ studentAttendanceCheck.result.present }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title text-red">Absent Days</span>
+              <span class="stat-number text-red">{{ studentAttendanceCheck.result.absent }}</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-title text-purple">Approved Leaves</span>
+              <span class="stat-number text-purple">{{ studentAttendanceCheck.result.leave }}</span>
+            </div>
+          </div>
+
+          <!-- Recent Attendance History Table -->
+          <div class="history-table-box" *ngIf="studentAttendanceCheck.result.records.length > 0">
+            <h4 class="sub-heading">Recent Daily Records</h4>
+            <div class="records-mini-list">
+              <div class="mini-record-row" *ngFor="let rec of studentAttendanceCheck.result.records">
+                <span class="rec-date">{{ rec.date }}</span>
+                <span 
+                  class="rec-status-tag" 
+                  [class.badge-p]="rec.status === 'present'"
+                  [class.badge-a]="rec.status === 'absent'"
+                  [class.badge-l]="rec.status === 'late'"
+                  [class.badge-o]="rec.status === 'leave'">
+                  {{ rec.status | uppercase }}
+                </span>
+                <span class="rec-remarks" *ngIf="rec.remarks">{{ rec.remarks }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- MODALS                                     -->
+  <!-- ========================================== -->
+
+  <!-- Modal 1: Add New Class -->
+  <div class="modal-backdrop" *ngIf="showAddClassModal" (click)="showAddClassModal = false">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">+ Add New Class</h3>
+        <button type="button" class="modal-close-btn" (click)="showAddClassModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="input-label">Grade / Standard: <span class="required">*</span></label>
+          <select class="custom-select" [(ngModel)]="newClass.grade">
+            <option *ngFor="let g of availableGrades" [value]="g">{{ g }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="input-label">Section / Stream: <span class="required">*</span></label>
+          <input type="text" class="custom-input" placeholder="e.g. A, B, Science, Commerce" [(ngModel)]="newClass.section" />
+        </div>
+        <div class="form-group">
+          <label class="input-label">Room Number:</label>
+          <input type="text" class="custom-input" placeholder="e.g. Room 204, Lab 1" [(ngModel)]="newClass.room" />
+        </div>
+        <div class="form-group">
+          <label class="input-label">Class Teacher Name:</label>
+          <input type="text" class="custom-input" placeholder="e.g. Mrs. Sharma" [(ngModel)]="newClass.teacherName" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" (click)="showAddClassModal = false">Cancel</button>
+        <button type="button" class="btn-primary" (click)="saveNewClass()">Save Class</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 2: Add Student -->
+  <div class="modal-backdrop" *ngIf="showAddStudentModal" (click)="showAddStudentModal = false">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">+ Add Student</h3>
+        <button type="button" class="modal-close-btn" (click)="showAddStudentModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="input-label">Class: <span class="required">*</span></label>
+          <select class="custom-select" [(ngModel)]="newStudent.classId" (change)="onStudentModalClassChange()">
+            <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="input-label">Roll Number: <span class="required">*</span></label>
+          <input type="text" class="custom-input" placeholder="e.g. 01, 15" [(ngModel)]="newStudent.rollNo" />
+        </div>
+        <div class="form-group">
+          <label class="input-label">Student Full Name: <span class="required">*</span></label>
+          <input type="text" class="custom-input" placeholder="e.g. Aarav Patel" [(ngModel)]="newStudent.name" />
+        </div>
+        <div class="form-group">
+          <label class="input-label">Gender:</label>
+          <select class="custom-select" [(ngModel)]="newStudent.gender">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="input-label">Parent / Guardian Name:</label>
+          <input type="text" class="custom-input" placeholder="e.g. Rajesh Patel" [(ngModel)]="newStudent.parentName" />
+        </div>
+        <div class="form-group">
+          <label class="input-label">Contact Number:</label>
+          <input type="tel" class="custom-input" placeholder="e.g. +91 9876543210" [(ngModel)]="newStudent.phone" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" (click)="showAddStudentModal = false">Cancel</button>
+        <button type="button" class="btn-primary" (click)="saveNewStudent()">Add Student</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 3: Bulk Add Students -->
+  <div class="modal-backdrop" *ngIf="showBulkStudentModal" (click)="showBulkStudentModal = false">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">⚡ Bulk Add Students</h3>
+        <button type="button" class="modal-close-btn" (click)="showBulkStudentModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="input-label">Target Class: <span class="required">*</span></label>
+          <select class="custom-select" [(ngModel)]="bulkStudentInput.classId">
+            <option *ngFor="let c of classes" [value]="c.id">{{ c.name }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="input-label">Student Names (One per line): <span class="required">*</span></label>
+          <textarea 
+            class="custom-textarea" 
+            rows="8" 
+            placeholder="Aarav Sharma&#10;Diya Verma&#10;Kavya Nair&#10;Rohan Kumar" 
+            [(ngModel)]="bulkStudentInput.namesText"></textarea>
+          <span class="help-text">Roll numbers will be assigned sequentially automatically.</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" (click)="showBulkStudentModal = false">Cancel</button>
+        <button type="button" class="btn-primary" (click)="saveBulkStudents()">Add Students in Bulk</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 4: Add Faculty Member -->
+  <div class="modal-backdrop" *ngIf="showAddTeacherModal" (click)="showAddTeacherModal = false">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">+ Add Faculty Member</h3>
+        <button type="button" class="modal-close-btn" (click)="showAddTeacherModal = false">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="input-label">Employee ID:</label>
+          <input type="text" class="custom-input" placeholder="e.g. TCH-105" [(ngModel)]="newTeacher.empId" />
+        </div>
+        <div class="form-group">
+          <label class="input-label">Full Name: <span class="required">*</span></label>
+          <input type="text" class="custom-input" placeholder="e.g. Dr. John Doe" [(ngModel)]="newTeacher.name" />
+        </div>
+        <div class="form-group">
+          <label class="input-label">Department / Subject:</label>
+          <input type="text" class="custom-input" placeholder="e.g. Mathematics, Science" [(ngModel)]="newTeacher.department" />
+        </div>
+        <div class="form-group">
+          <label class="input-label">Contact Number:</label>
+          <input type="tel" class="custom-input" placeholder="e.g. +91 9876543210" [(ngModel)]="newTeacher.phone" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" (click)="showAddTeacherModal = false">Cancel</button>
+        <button type="button" class="btn-primary" (click)="saveNewTeacher()">Save Teacher</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal 5: Review Leave Application -->
+  <div class="modal-backdrop" *ngIf="showReviewLeaveModal" (click)="showReviewLeaveModal = false">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Review Leave Application</h3>
+        <button type="button" class="modal-close-btn" (click)="showReviewLeaveModal = false">✕</button>
+      </div>
+      <div class="modal-body" *ngIf="reviewingLeave">
+        <div class="review-student-info">
+          <h4>{{ reviewingLeave.studentName }} (Roll #{{ reviewingLeave.rollNo }})</h4>
+          <span class="leave-class-tag">{{ reviewingLeave.className }}</span>
+        </div>
+        <div class="review-details-box">
+          <p><strong>Duration:</strong> {{ reviewingLeave.fromDate }} to {{ reviewingLeave.toDate }}</p>
+          <p><strong>Leave Type:</strong> {{ reviewingLeave.leaveType }}</p>
+          <p><strong>Reason:</strong> "{{ reviewingLeave.reason }}"</p>
+          <p *ngIf="reviewingLeave.parentContact"><strong>Parent Phone:</strong> {{ reviewingLeave.parentContact }}</p>
+        </div>
+        <div class="form-group">
+          <label class="input-label">Teacher Feedback / Notes (Optional):</label>
+          <input 
+            type="text" 
+            class="custom-input" 
+            placeholder="e.g. Approved. Homework to be submitted on return." 
+            [(ngModel)]="reviewRemarksInput" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-reject" (click)="submitLeaveDecision('rejected')">✕ Reject</button>
+        <button type="button" class="btn-approve" (click)="submitLeaveDecision('approved')">✓ Approve Application</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-notification" *ngIf="toast.visible" [class]="'toast-' + toast.type">
+    <span class="toast-icon">
+      {{ toast.type === 'success' ? '✓' : toast.type === 'error' ? '✕' : 'ℹ' }}
+    </span>
+    <span class="toast-text">{{ toast.message }}</span>
+  </div>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="mobile-bottom-nav">
+    <!-- Teacher Mode Nav -->
+    <ng-container *ngIf="activePortal === 'teacher'">
+      <button 
+        type="button" 
+        class="mob-nav-btn" 
+        [class.active]="teacherTab === 'dashboard'" 
+        (click)="setTeacherTab('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <span>Overview</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="mob-nav-btn" 
+        [class.active]="teacherTab === 'record'" 
+        (click)="setTeacherTab('record')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        </svg>
+        <span>Daily</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="mob-nav-btn" 
+        [class.active]="teacherTab === 'monthly'" 
+        (click)="setTeacherTab('monthly')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <span>Monthly</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="mob-nav-btn" 
+        [class.active]="teacherTab === 'classes'" 
+        (click)="setTeacherTab('classes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+        </svg>
+        <span>Classes</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="mob-nav-btn" 
+        [class.active]="teacherTab === 'leaves'" 
+        (click)="setTeacherTab('leaves')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <span>Leaves</span>
+        <span class="mob-badge" *ngIf="pendingLeavesCount > 0">{{ pendingLeavesCount }}</span>
+      </button>
+    </ng-container>
+
+    <!-- Student Mode Nav -->
+    <ng-container *ngIf="activePortal === 'student'">
+      <button 
+        type="button" 
+        class="mob-nav-btn" 
+        [class.active]="studentTab === 'apply-leave'" 
+        (click)="studentTab = 'apply-leave'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        <span>Apply</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="mob-nav-btn" 
+        [class.active]="studentTab === 'my-leaves'" 
+        (click)="studentTab = 'my-leaves'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <span>Status</span>
+      </button>
+
+      <button 
+        type="button" 
+        class="mob-nav-btn" 
+        [class.active]="studentTab === 'my-attendance'" 
+        (click)="studentTab = 'my-attendance'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <span>My Attendance</span>
+      </button>
+    </ng-container>
+  </nav>
+</div>
