@@ -97,6 +97,140 @@
   flex-wrap: wrap;
 }
 
+/* External Navigation Group (Home & Cryptex) */
+.header-nav-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: var(--font-primary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.header-nav-btn .nav-btn-icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.header-nav-btn .ext-arrow {
+  width: 11px;
+  height: 11px;
+  opacity: 0.45;
+  margin-left: 1px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.header-nav-btn:hover .ext-arrow {
+  opacity: 0.95;
+  transform: translate(1px, -1px);
+}
+
+/* Home button styling */
+.btn-home {
+  color: #e2e8f0;
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.btn-home:hover {
+  background: rgba(14, 165, 233, 0.18);
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #38bdf8;
+  box-shadow: 0 2px 10px rgba(14, 165, 233, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-home:hover .nav-btn-icon {
+  transform: scale(1.1);
+  color: #38bdf8;
+}
+
+.btn-home:active {
+  transform: translateY(0);
+}
+
+/* Cryptex button styling */
+.btn-cryptex {
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.btn-cryptex:hover {
+  background: rgba(16, 185, 129, 0.22);
+  border-color: #10b981;
+  color: #6ee7b7;
+  box-shadow: 0 2px 12px rgba(16, 185, 129, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-cryptex:hover .nav-btn-icon {
+  transform: scale(1.1) rotate(-8deg);
+  color: #a7f3d0;
+}
+
+.btn-cryptex:active {
+  transform: translateY(0);
+}
+
+/* Source Code (GitHub) button styling */
+.btn-github {
+  color: #cbd5e1;
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.btn-github:hover {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: rgba(129, 140, 248, 0.5);
+  color: #e0e7ff;
+  box-shadow: 0 2px 10px rgba(99, 102, 241, 0.25);
+  transform: translateY(-1px);
+}
+
+.btn-github:hover .nav-btn-icon {
+  transform: scale(1.15);
+  color: #fff;
+}
+
+.btn-github:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 640px) {
+  .header-nav-btn {
+    padding: 5px 10px;
+    font-size: 0.78rem;
+    gap: 5px;
+  }
+  .header-nav-btn .ext-arrow {
+    display: none;
+  }
+}
+
 /* Portal Toggle Pill */
 .portal-toggle-pill {
   display: flex;
@@ -2436,30 +2570,33 @@
 }
 
 /* =========================================================
-   TOAST NOTIFICATION
+   TOAST NOTIFICATION (Repositioned so it doesn't block header buttons)
    ========================================================= */
 .toast-notification {
   position: fixed;
-  top: 24px;
+  top: 76px;
   right: 24px;
   z-index: 200;
-  background: #1e293b;
-  border: 1px solid var(--border-subtle);
+  background: rgba(30, 41, 59, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius-md);
-  padding: 12px 18px;
+  padding: 12px 14px 12px 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  box-shadow: var(--shadow-lg);
+  gap: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
   font-size: 0.88rem;
   font-weight: 600;
   color: #fff;
-  animation: slideRight 0.25s ease-out;
+  max-width: 440px;
+  animation: slideToastDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@keyframes slideRight {
-  from { opacity: 0; transform: translateX(40px); }
-  to { opacity: 1; transform: translateX(0); }
+@keyframes slideToastDown {
+  from { opacity: 0; transform: translateY(-12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .toast-success {
@@ -2476,12 +2613,66 @@
 
 .toast-icon {
   font-weight: 800;
-  font-size: 1rem;
+  font-size: 1.05rem;
+  flex-shrink: 0;
 }
 
 .toast-success .toast-icon { color: var(--color-present); }
 .toast-error .toast-icon { color: var(--color-absent); }
 .toast-info .toast-icon { color: #38bdf8; }
+
+.toast-text {
+  flex: 1;
+  line-height: 1.4;
+}
+
+.toast-close-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #94a3b8;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.toast-close-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+.toast-close-btn:hover {
+  background: rgba(244, 63, 94, 0.25);
+  border-color: rgba(244, 63, 94, 0.5);
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.toast-close-btn:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+  .toast-notification {
+    top: auto;
+    bottom: 76px;
+    right: 16px;
+    left: 16px;
+    max-width: none;
+    animation: slideToastUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slideToastUp {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+}
 
 /* =========================================================
    MOBILE BOTTOM NAVIGATION BAR

@@ -141,6 +141,7 @@ export class App implements OnInit {
     type: 'success',
     visible: false
   };
+  private toastTimer: any = null;
 
   constructor(public attendanceService: AttendanceService) {}
 
@@ -166,10 +167,22 @@ export class App implements OnInit {
   }
 
   showToastNotification(message: string, type: 'success' | 'error' | 'info' = 'success'): void {
+    if (this.toastTimer) {
+      clearTimeout(this.toastTimer);
+    }
     this.toast = { message, type, visible: true };
-    setTimeout(() => {
+    this.toastTimer = setTimeout(() => {
       this.toast.visible = false;
-    }, 3500);
+      this.toastTimer = null;
+    }, 4000);
+  }
+
+  dismissToast(): void {
+    if (this.toastTimer) {
+      clearTimeout(this.toastTimer);
+      this.toastTimer = null;
+    }
+    this.toast.visible = false;
   }
 
   refreshAllData(): void {
